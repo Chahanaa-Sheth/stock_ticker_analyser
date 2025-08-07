@@ -46,7 +46,7 @@ if 'sentiment_data' not in st.session_state:
 # Header
 st.markdown("""
 <div class="header">
-    <h1>🚀 AI-Powered Stock Forecaster</h1>
+    <h1>AI-Powered Stock Forecaster</h1>
     <p>Advanced ML predictions with real-time sentiment analysis</p>
 </div>
 """, unsafe_allow_html=True)
@@ -55,49 +55,46 @@ st.markdown("""
 with st.sidebar:
     st.markdown("""
     <div style="text-align: center; padding: 1rem;">
-        <h2 style="color: #667eea; margin-bottom: 1rem;">📊 Controls</h2>
+        <h2 style="color: #667eea; margin-bottom: 1rem;">Controls</h2>
     </div>
     """, unsafe_allow_html=True)
 
     ticker = st.text_input(
-        "📈 Stock Symbol",
+        "Stock Symbol",
         value="AAPL",
         placeholder="e.g., AAPL, GOOGL, MSFT",
         help="Enter a valid stock ticker symbol"
     ).upper()
 
-    train_button = st.button("🤖 Train AI Model", key="train_model")
+    train_button = st.button(" Train AI Model", key="train_model")
 
     status_class = "status-trained" if st.session_state.model_trained else "status-not-trained"
-    status_text = "✅ Model Ready" if st.session_state.model_trained else "❌ Model Not Trained"
+    status_text = "Model Ready" if st.session_state.model_trained else "Model Not Trained"
     st.markdown(f"""
     <div class="status-indicator {status_class}">
         {status_text}
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("### 📰 News Configuration", unsafe_allow_html=True)
+    st.markdown("### News Configuration", unsafe_allow_html=True)
 
 # NewsData.io setup
+# Get API key from Streamlit secrets or environment
 NEWSDATA_KEY = st.secrets.get("NEWSDATA_IO_KEY") or os.environ.get("NEWSDATA_IO_KEY")
+
+# Setup NewsData API Client
 if NEWSDATA_KEY:
     try:
         newsapi = NewsDataApiClient(apikey=NEWSDATA_KEY)
-        st.sidebar.success("✅ NewsData.io Connected")
+        st.sidebar.success("NewsData.io Connected")
     except Exception as e:
         newsapi = None
-        st.sidebar.error(f"❌ NewsData.io Error: {e}")
+        st.sidebar.error(f"NewsData.io Error: {e}")
 else:
     newsapi = None
-    st.sidebar.info("Enter your NewsData.io key in secrets or below")
-    key_input = st.sidebar.text_input("🔑 NewsData.io Key", type="password")
-    if key_input:
-        try:
-            newsapi = NewsDataApiClient(apikey=key_input)
-            st.sidebar.success("✅ NewsData.io Connected")
-        except Exception as e:
-            st.sidebar.error(f"❌ Invalid key: {e}")
-
+    st.sidebar.warning("Please set your NewsData.io key in secrets.toml or as environment variable.")
+    
+    
 st.sidebar.markdown("""
 <div class="info-box">
     <strong>Features Used:</strong><br>
@@ -114,14 +111,14 @@ col1, col2 = st.columns([2, 1])
 
 # Training logic
 if train_button and ticker:
-    with st.spinner("🤖 Training AI model..."):
+    with st.spinner("Training AI model..."):
         try:
             # Fetch stock data
             stock = yf.Ticker(ticker)
             df = stock.history(period="6mo")
 
             if df.empty:
-                st.error("❌ No data found for this ticker. Please check the symbol.")
+                st.error(" No data found for this ticker. Please check the symbol.")
             else:
                 # Prepare data
                 data = df.reset_index()
@@ -129,7 +126,7 @@ if train_button and ticker:
                 data = data.dropna(subset=["Tomorrow_Close"])
 
                 if len(data) < 10:
-                    st.error("❌ Not enough data for training. Try a different ticker.")
+                    st.error("Not enough data for training. Try a different ticker.")
                 else:
                     # Train model
                     from sklearn.preprocessing import StandardScaler
@@ -164,7 +161,15 @@ if train_button and ticker:
                     }
 
         except Exception as e:
-            st.error(f"❌ Training error: {e}")
+            st.error(f"Training error: {e}")
+
+if 'prediction_data' in st.session_state and st.session_state.prediction_data:
+    st.session_state.model_trained = True
+    st.success("Model trained successfully!")
+else:
+    st.session_state.model_trained = False
+    st.error("Model training failed. Please check the ticker or try again.")
+
 
 if newsapi:
     try:
@@ -183,11 +188,6 @@ if newsapi:
             }
     except Exception as e:
         st.sidebar.warning(f"NewsData.io fetch failed: {e}")
-
-    st.session_state.model_trained = True
-    st.success("✅ Model trained successfully!")
-    st.rerun()
-
 
 
 
@@ -221,17 +221,17 @@ with col1:
             # Volume chart
             st.markdown('<div class="chart-container">', unsafe_allow_html=True)
             fig_volume = px.bar(data_frame=df, x="Date", y="Volume",
-                                title=f"📊 {ticker} Trading Volume",
+                                title=f" {ticker} Trading Volume",
                                 template="plotly_white")
             st.plotly_chart(fig_volume, use_container_width=True)
             st.markdown('</div>', unsafe_allow_html=True)
 
         except Exception as e:
-            st.error(f"❌ Error loading charts: {e}")
+            st.error(f" Error loading charts: {e}")
     else:
         st.markdown("""
         <div class="chart-container" style="text-align: center; padding: 4rem;">
-            <h3 style="color: #6c757d;">📊 Charts will appear here</h3>
+            <h3 style="color: #6c757d;"> Charts will appear here</h3>
             <p style="color: #9ca3af;">Train the AI model to see detailed price analysis</p>
         </div>
         """, unsafe_allow_html=True)
@@ -263,16 +263,16 @@ with col2:
         pred_data = st.session_state.prediction_data
         st.markdown(f"""
         <div class="prediction-card">
-            <div class="prediction-title">🔮 Tomorrow's Prediction</div>
+            <div class="prediction-title"> Tomorrow's Prediction</div>
             <div class="prediction-value">${pred_data['price']:.2f}</div>
             <div>{pred_data['direction']} {pred_data['change']:+.2f}%</div>
-            <div class="prediction-confidence">🎯 Model Confidence: {pred_data['confidence']:.1f}%</div>
+            <div class="prediction-confidence"> Model Confidence: {pred_data['confidence']:.1f}%</div>
         </div>
         """, unsafe_allow_html=True)
     else:
         st.markdown("""
         <div class="prediction-card">
-            <div class="prediction-title">🔮 AI Prediction</div>
+            <div class="prediction-title"> AI Prediction</div>
             <div style="font-size: 1.2rem; opacity: 0.8;">
                 Train the model to see predictions
             </div>
@@ -285,7 +285,7 @@ with col2:
         emoji = "😊" if sentiment['label'] == 'Positive' else "😞" if sentiment['label'] == 'Negative' else "😐"
         st.markdown(f"""
         <div class="metric-card">
-            <div class="metric-title">📊 Market Sentiment</div>
+            <div class="metric-title">Market Sentiment</div>
             <div class="metric-value">{emoji} {sentiment['label']}</div>
             <div class="metric-change">Score: {sentiment['score']:.3f}</div>
         </div>
@@ -293,7 +293,7 @@ with col2:
     else:
         st.markdown("""
         <div class="metric-card">
-            <div class="metric-title">📊 Market Sentiment</div>
+            <div class="metric-title"> Market Sentiment</div>
             <div class="metric-value">😐 Neutral</div>
             <div class="metric-change">Configure NewsAPI for sentiment analysis</div>
         </div>
@@ -302,14 +302,14 @@ with col2:
     # News feed
     st.markdown("""
     <div class="metric-card">
-        <div class="metric-title">📰 Latest News</div>
+        <div class="metric-title"> Latest News</div>
     """, unsafe_allow_html=True)
     if st.session_state.news_data:
         for title, url, source in st.session_state.news_data[:5]:
             st.markdown(f"""
             <div class="news-card">
                 <div class="news-title"><a href="{url}" target="_blank">{title}</a></div>
-                <div class="news-source">📡 {source}</div>
+                <div class="news-source">{source}</div>
             </div>
             """, unsafe_allow_html=True)
     else:
@@ -323,7 +323,7 @@ with col2:
 # Footer
 st.markdown("""
 <div style="text-align: center; padding: 2rem; color: #6c757d; font-size: 0.9rem; border-top: 1px solid #e9ecef; margin-top: 3rem;">
-    <p>⚡ Powered by AI • 📊 Real-time Data • 🔒 Secure Analysis</p>
+    <p>Powered by AI • Real-time Data •  Secure Analysis</p>
     <p style="font-size: 0.8rem; margin-top: 0.5rem;">
         Data provided by Yahoo Finance | News powered by NewsData.io | Built with Streamlit
     </p>
